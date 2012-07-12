@@ -29,7 +29,7 @@ class CaptchaCase(TestCase):
             self.assertEquals(response._headers.get('content-type'), ('Content-Type', 'image/png'))
 
     def testAudio(self):
-        if not settings.CAPTCHA_FLITE_PATH:
+        if not settings.CAPTCHA['FLITE_PATH']:
             return
         for key in (self.math_store.hashkey, self.chars_store.hashkey, self.default_store.hashkey):
             response = self.client.get(reverse('captcha-audio', kwargs=dict(key=key)))
@@ -95,7 +95,7 @@ class CaptchaCase(TestCase):
             self.fail()
 
     def testRepeatedChallengeFormSubmit(self):
-        settings.CAPTCHA_CHALLENGE_FUNCT = 'captcha.tests.trivial_challenge'
+        settings.CAPTCHA['CHALLENGE_FUNCT'] = 'captcha.tests.trivial_challenge'
 
         r1 = self.client.get(reverse('captcha-test'))
         r2 = self.client.get(reverse('captcha-test'))
@@ -127,13 +127,13 @@ class CaptchaCase(TestCase):
         self.assertTrue(r2.content.find('Form validated') > 0)
 
     def testOutputFormat(self):
-        settings.CAPTCHA_OUTPUT_FORMAT = u'%(image)s<p>Hello, captcha world</p>%(hidden_field)s%(text_field)s'
+        settings.CAPTCHA['OUTPUT_FORMAT'] = u'%(image)s<p>Hello, captcha world</p>%(hidden_field)s%(text_field)s'
         r = self.client.get(reverse('captcha-test'))
         self.failUnlessEqual(r.status_code, 200)
         self.assertTrue('<p>Hello, captcha world</p>' in r.content)
 
     def testInvalidOutputFormat(self):
-        settings.CAPTCHA_OUTPUT_FORMAT = u'%(image)s'
+        settings.CAPTCHA['OUTPUT_FORMAT'] = u'%(image)s'
         try:
             self.client.get(reverse('captcha-test'))
             self.fail()
@@ -141,14 +141,14 @@ class CaptchaCase(TestCase):
             self.failUnless('CAPTCHA_OUTPUT_FORMAT' in unicode(e))
 
     def testPerFormFormat(self):
-        settings.CAPTCHA_OUTPUT_FORMAT = u'%(image)s testCustomFormatString %(hidden_field)s %(text_field)s'
+        settings.CAPTCHA['OUTPUT_FORMAT'] = u'%(image)s testCustomFormatString %(hidden_field)s %(text_field)s'
         r = self.client.get(reverse('captcha-test'))
         self.failUnless('testCustomFormatString' in r.content)
         r = self.client.get(reverse('test_per_form_format'))
         self.failUnless('testPerFieldCustomFormatString' in r.content)
 
     def testIssue31ProperLabel(self):
-        settings.CAPTCHA_OUTPUT_FORMAT = u'%(image)s %(hidden_field)s %(text_field)s'
+        settings.CAPTCHA['OUTPUT_FORMAT'] = u'%(image)s %(hidden_field)s %(text_field)s'
         r = self.client.get(reverse('captcha-test'))
         self.failUnless('<label for="id_captcha_1"' in r.content)
 

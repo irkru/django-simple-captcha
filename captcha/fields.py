@@ -1,5 +1,5 @@
 from captcha.conf import settings
-from captcha.models import CaptchaStore, get_safe_now
+from captcha.models import get_safe_now, create, delete
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse,  NoReverseMatch
 from django.forms import ValidationError
@@ -18,7 +18,7 @@ class CaptchaTextInput(MultiWidget):
 
         for key in ('image', 'hidden_field', 'text_field'):
             if '%%(%s)s' % key not in self._args.get('output_format'):
-                raise ImproperlyConfigured('All of %s must be present in your CAPTCHA_OUTPUT_FORMAT setting. Could not find %s' % (
+                raise ImproperlyConfigured('All of %s must be present in your CAPTCHA[\'OUTPUT_FORMAT\'] setting. Could not find %s' % (
                     ', '.join(['%%(%s)s' % k for k in ('image', 'hidden_field', 'text_field')]),
                     '%%(%s)s' % key
                 ))
@@ -40,13 +40,15 @@ class CaptchaTextInput(MultiWidget):
             raise ImproperlyConfigured('Make sure you\'ve included captcha.urls as explained in the INSTALLATION section on http://readthedocs.org/docs/django-simple-captcha/en/latest/usage.html#installation')
 
         challenge, response = settings.get_challenge()()
-        store = CaptchaStore.objects.create(challenge=challenge, response=response)
-        key = store.hashkey
+
+        key = create(challenge, response)
+
         value = [key, u'']
 
         self.image_and_audio = '<img src="%s" alt="captcha" class="captcha" />' % reverse('captcha-image', kwargs=dict(key=key))
-        if settings.CAPTCHA_FLITE_PATH:
+        if settings.CAPTCHA['FLITE_PATH']:
             self.image_and_audio = '<a href="%s" title="%s">%s</a>' % (reverse('captcha-audio', kwargs=dict(key=key)), unicode(_('Play captcha as audio file')), self.image_and_audio)
+
         return super(CaptchaTextInput, self).render(name, value, attrs=attrs)
 
     # This is probably all the love it needs
@@ -66,7 +68,7 @@ class CaptchaField(MultiValueField):
             kwargs['error_messages'].update(dict(invalid=_('Invalid CAPTCHA')))
 
         widget_kwargs = dict(
-            output_format=kwargs.get('output_format', None) or settings.CAPTCHA_OUTPUT_FORMAT
+            output_format=kwargs.get('output_format', None) or settings.CAPTCHA['OUTPUT_FORMAT']
         )
         for k in ('output_format',):
             if k in kwargs:
@@ -81,10 +83,9 @@ class CaptchaField(MultiValueField):
     def clean(self, value):
         super(CaptchaField, self).clean(value)
         response, value[1] = value[1].strip().lower(), ''
-        CaptchaStore.remove_expired()
+
         try:
-            store = CaptchaStore.objects.get(response=response, hashkey=value[0], expiration__gt=get_safe_now())
-            store.delete()
+            delete(response, value[0])
         except Exception:
             raise ValidationError(getattr(self, 'error_messages', dict()).get('invalid', _('Invalid CAPTCHA')))
         return value

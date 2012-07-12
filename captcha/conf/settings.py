@@ -1,31 +1,47 @@
 import os
+
 from django.conf import settings
 
-CAPTCHA_FONT_PATH = getattr(settings, 'CAPTCHA_FONT_PATH', os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'fonts/Vera.ttf')))
-CAPTCHA_FONT_SIZE = getattr(settings, 'CAPTCHA_FONT_SIZE', 22)
-CAPTCHA_LETTER_ROTATION = getattr(settings, 'CAPTCHA_LETTER_ROTATION', (-35, 35))
-CAPTCHA_BACKGROUND_COLOR = getattr(settings, 'CAPTCHA_BACKGROUND_COLOR', '#ffffff')
-CAPTCHA_FOREGROUND_COLOR = getattr(settings, 'CAPTCHA_FOREGROUND_COLOR', '#001100')
-CAPTCHA_CHALLENGE_FUNCT = getattr(settings, 'CAPTCHA_CHALLENGE_FUNCT', 'captcha.helpers.random_char_challenge')
-CAPTCHA_NOISE_FUNCTIONS = getattr(settings, 'CAPTCHA_NOISE_FUNCTIONS', ('captcha.helpers.noise_arcs', 'captcha.helpers.noise_dots',))
-CAPTCHA_FILTER_FUNCTIONS = getattr(settings, 'CAPTCHA_FILTER_FUNCTIONS', ('captcha.helpers.post_smooth',))
-CAPTCHA_WORDS_DICTIONARY = getattr(settings, 'CAPTCHA_WORDS_DICTIONARY', '/usr/share/dict/words')
-CAPTCHA_PUNCTUATION = getattr(settings, 'CAPTCHA_PUNCTUATION', '''_"',.;:-''')
-CAPTCHA_FLITE_PATH = getattr(settings, 'CAPTCHA_FLITE_PATH', None)
-CAPTCHA_TIMEOUT = getattr(settings, 'CAPTCHA_TIMEOUT', 5)  # Minutes
-CAPTCHA_LENGTH = int(getattr(settings, 'CAPTCHA_LENGTH', 4))  # Chars
-CAPTCHA_IMAGE_BEFORE_FIELD = getattr(settings, 'CAPTCHA_IMAGE_BEFORE_FIELD', True)
-CAPTCHA_DICTIONARY_MIN_LENGTH = getattr(settings, 'CAPTCHA_DICTIONARY_MIN_LENGTH', 0)
-CAPTCHA_DICTIONARY_MAX_LENGTH = getattr(settings, 'CAPTCHA_DICTIONARY_MAX_LENGTH', 99)
-if CAPTCHA_IMAGE_BEFORE_FIELD:
-    CAPTCHA_OUTPUT_FORMAT = getattr(settings, 'CAPTCHA_OUTPUT_FORMAT', u'%(image)s %(hidden_field)s %(text_field)s')
-else:
-    CAPTCHA_OUTPUT_FORMAT = getattr(settings, 'CAPTCHA_OUTPUT_FORMAT', u'%(hidden_field)s %(text_field)s %(image)s')
 
+CAPTCHA = {
+    'FONT_PATH': os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'fonts', 'Vera.ttf')),
+    'FONT_SIZE': 22,
+    'LETTER_ROTATION': (-35, 35),
+    'BACKGROUND_COLOR': '#ffffff',
+    'FOREGROUND_COLOR': '#001100',
+    'CHALLENGE_FUNCT': 'captcha.helpers.random_char_challenge',
+    'NOISE_FUNCTIONS': ('captcha.helpers.noise_arcs', 'captcha.helpers.noise_dots',),
+    'FILTER_FUNCTIONS': ('captcha.helpers.post_smooth',),
+    'WORDS_DICTIONARY': '/usr/share/dict/words',
+    'PUNCTUATION': '''_"',.;:-''',
+    'FLITE_PATH': None,
+    'TIMEOUT': 5,  # Minutes
+    'LENGTH': 4,  # Chars
+    'IMAGE_BEFORE_FIELD': True,
+    'DICTIONARY_MIN_LENGTH': 0,
+    'DICTIONARY_MAX_LENGTH': 99,
+    'REDIS': {  # Settings for redis database
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'PREFIX': 'captcha',
+    }
+}
+
+captcha_settings = getattr(settings, 'CAPTCHA', {})
+
+if CAPTCHA['IMAGE_BEFORE_FIELD']:
+    CAPTCHA['OUTPUT_FORMAT'] = captcha_settings.get('OUTPUT_FORMAT', u'%(image)s %(hidden_field)s %(text_field)s')
+else:
+    CAPTCHA['OUTPUT_FORMAT'] = captcha_settings.get('OUTPUT_FORMAT', u'%(hidden_field)s %(text_field)s %(image)s')
+
+CAPTCHA.update(captcha_settings)
+
+del captcha_settings
 
 # Failsafe
-if CAPTCHA_DICTIONARY_MIN_LENGTH > CAPTCHA_DICTIONARY_MAX_LENGTH:
-    CAPTCHA_DICTIONARY_MIN_LENGTH, CAPTCHA_DICTIONARY_MAX_LENGTH = CAPTCHA_DICTIONARY_MAX_LENGTH, CAPTCHA_DICTIONARY_MIN_LENGTH
+if CAPTCHA['DICTIONARY_MIN_LENGTH'] > CAPTCHA['DICTIONARY_MAX_LENGTH']:
+    CAPTCHA['DICTIONARY_MIN_LENGTH'], CAPTCHA['DICTIONARY_MAX_LENGTH'] = CAPTCHA['DICTIONARY_MAX_LENGTH'], CAPTCHA['DICTIONARY_MIN_LENGTH']
 
 
 def _callable_from_string(string_or_callable):
@@ -36,16 +52,16 @@ def _callable_from_string(string_or_callable):
 
 
 def get_challenge():
-    return _callable_from_string(CAPTCHA_CHALLENGE_FUNCT)
+    return _callable_from_string(CAPTCHA['CHALLENGE_FUNCT'])
 
 
 def noise_functions():
-    if CAPTCHA_NOISE_FUNCTIONS:
-        return map(_callable_from_string, CAPTCHA_NOISE_FUNCTIONS)
+    if CAPTCHA['NOISE_FUNCTIONS']:
+        return map(_callable_from_string, CAPTCHA['NOISE_FUNCTIONS'])
     return list()
 
 
 def filter_functions():
-    if CAPTCHA_FILTER_FUNCTIONS:
-        return map(_callable_from_string, CAPTCHA_FILTER_FUNCTIONS)
+    if CAPTCHA['FILTER_FUNCTIONS']:
+        return map(_callable_from_string, CAPTCHA['FILTER_FUNCTIONS'])
     return list()

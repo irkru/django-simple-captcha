@@ -9,6 +9,9 @@ Django Simple Captcha is an extremely simple, yet highly customizable Django app
 
 .. image:: http://django-simple-captcha.googlecode.com/files/Captcha3.png
 
+This is a fork of the original Django Simple Captcha (https://github.com/mbi/django-simple-captcha), which
+stores all the data in the Redis database.
+
 Features
 ++++++++
 

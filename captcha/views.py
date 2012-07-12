@@ -1,5 +1,5 @@
 from captcha.conf import settings
-from captcha.models import CaptchaStore
+from captcha.models import get
 from cStringIO import StringIO
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -15,22 +15,25 @@ try:
 except ImportError:
     from PIL import Image, ImageDraw, ImageFont
 
+import redis
+
 
 NON_DIGITS_RX = re.compile('[^\d]')
 
 
 def captcha_image(request, key):
-    store = get_object_or_404(CaptchaStore, hashkey=key)
-    text = store.challenge
+    store = get(key)
 
-    if settings.CAPTCHA_FONT_PATH.lower().strip().endswith('ttf'):
-        font = ImageFont.truetype(settings.CAPTCHA_FONT_PATH, settings.CAPTCHA_FONT_SIZE)
+    challenge, response = store.split('\x00')
+
+    if settings.CAPTCHA['FONT_PATH'].lower().strip().endswith('ttf'):
+        font = ImageFont.truetype(settings.CAPTCHA['FONT_PATH'], settings.CAPTCHA['FONT_SIZE'])
     else:
-        font = ImageFont.load(settings.CAPTCHA_FONT_PATH)
+        font = ImageFont.load(settings.CAPTCHA['FONT_PATH'])
 
-    size = font.getsize(text)
+    size = font.getsize(challenge)
     size = (size[0] * 2, int(size[1] * 1.2))
-    image = Image.new('RGB', size, settings.CAPTCHA_BACKGROUND_COLOR)
+    image = Image.new('RGB', size, settings.CAPTCHA['BACKGROUND_COLOR'])
 
     try:
         PIL_VERSION = int(NON_DIGITS_RX.sub('', Image.VERSION))
@@ -39,21 +42,21 @@ def captcha_image(request, key):
     xpos = 2
 
     charlist = []
-    for char in text:
-        if char in settings.CAPTCHA_PUNCTUATION and len(charlist) >= 1:
+    for char in challenge:
+        if char in settings.CAPTCHA['PUNCTUATION'] and len(charlist) >= 1:
             charlist[-1] += char
         else:
             charlist.append(char)
     for char in charlist:
-        fgimage = Image.new('RGB', size, settings.CAPTCHA_FOREGROUND_COLOR)
+        fgimage = Image.new('RGB', size, settings.CAPTCHA['FOREGROUND_COLOR'])
         charimage = Image.new('L', font.getsize(' %s ' % char), '#000000')
         chardraw = ImageDraw.Draw(charimage)
         chardraw.text((0, 0), ' %s ' % char, font=font, fill='#ffffff')
-        if settings.CAPTCHA_LETTER_ROTATION:
+        if settings.CAPTCHA['LETTER_ROTATION']:
             if PIL_VERSION >= 116:
-                charimage = charimage.rotate(random.randrange(*settings.CAPTCHA_LETTER_ROTATION), expand=0, resample=Image.BICUBIC)
+                charimage = charimage.rotate(random.randrange(*settings.CAPTCHA['LETTER_ROTATION']), expand=0, resample=Image.BICUBIC)
             else:
-                charimage = charimage.rotate(random.randrange(*settings.CAPTCHA_LETTER_ROTATION), resample=Image.BICUBIC)
+                charimage = charimage.rotate(random.randrange(*settings.CAPTCHA['LETTER_ROTATION']), resample=Image.BICUBIC)
         charimage = charimage.crop(charimage.getbbox())
         maskimage = Image.new('L', size)
 
@@ -82,22 +85,27 @@ def captcha_image(request, key):
 
 
 def captcha_audio(request, key):
-    if settings.CAPTCHA_FLITE_PATH:
-        store = get_object_or_404(CaptchaStore, hashkey=key)
-        text = store.challenge
-        if 'captcha.helpers.math_challenge' == settings.CAPTCHA_CHALLENGE_FUNCT:
-            text = text.replace('*', 'times').replace('-', 'minus')
-        else:
-            text = ', '.join(list(text))
-        path = str(os.path.join(tempfile.gettempdir(), '%s.wav' % key))
-        cline = '%s -t "%s" -o "%s"' % (settings.CAPTCHA_FLITE_PATH, text, path)
-        os.popen(cline).read()
-        if os.path.isfile(path):
-            response = HttpResponse()
-            f = open(path, 'rb')
-            response['Content-Type'] = 'audio/x-wav'
-            response.write(f.read())
-            f.close()
-            os.unlink(path)
-            return response
-    raise Http404
+    if not settings.CAPTCHA['FLITE_PATH']:
+        raise Http404()
+
+    store = get(key)
+
+    challenge, response = store.split('\x00')
+
+    if 'captcha.helpers.math_challenge' == settings.CAPTCHA['CHALLENGE_FUNCT']:
+        challenge = challenge.replace('*', 'times').replace('-', 'minus')
+    else:
+        challenge = ', '.join(list(challenge))
+    path = str(os.path.join(tempfile.gettempdir(), '%s.wav' % key))
+    cline = '%s -t "%s" -o "%s"' % (settings.CAPTCHA['FLITE_PATH'], challenge, path)
+    os.popen(cline).read()
+
+    if os.path.isfile(path):
+        response = HttpResponse()
+        f = open(path, 'rb')
+        response['Content-Type'] = 'audio/x-wav'
+        response.write(f.read())
+        f.close()
+        os.unlink(path)
+
+        return response
