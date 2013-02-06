@@ -126,6 +126,15 @@ Defaults to: ``u'%(image)s %(hidden_field)s %(text_field)s'``
 
 Note: the three keys have to be present in the format string or an error will be thrown at runtime.
 
+CATPCHA_TEST_MODE
+------------------------
+
+New in version 0.3.6
+
+When set to True, the string "PASSED" (any case) will be accepted as a valid response to any CAPTCHA. 
+Use this for testing purposes. Warning: do NOT set this to True in production.
+
+Defaults to: False
 
 CAPTCHA['REDIS']
 -----------------
@@ -188,3 +197,7 @@ This sample generator that returns six random digits::
             ret += str(random.randint(0,9))
         return ret, ret
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> be36b480335de175d19b914016cc91acb0bb5224

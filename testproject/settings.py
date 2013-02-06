@@ -52,3 +52,7 @@ TEMPLATE_DEBUG = True
 
 # Django 1.4 TZ support
 USE_TZ = True
+SECRET_KEY = 'empty'
+
+
+CAPTCHA_FLITE_PATH = os.environ.get('CAPTCHA_FLITE_PATH', None)

@@ -1,4 +1,5 @@
 from captcha.conf import settings
+from captcha.helpers import captcha_image_url
 from captcha.models import get
 from cStringIO import StringIO
 from django.http import HttpResponse, Http404

@@ -33,6 +33,7 @@ def get_safe_now():
         pass
     return datetime.datetime.now()
 
+
 def create(challenge, response, hashkey=None):
     response = response.lower()
 
@@ -60,6 +61,7 @@ def get(hashkey):
         raise Http404()
 
     return store
+
 
 def delete(response, hashkey):
     client = redis.StrictRedis(host=captcha_settings.CAPTCHA['REDIS']['HOST'], port=captcha_settings.CAPTCHA['REDIS']['PORT'],

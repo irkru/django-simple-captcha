@@ -20,6 +20,7 @@ CAPTCHA = {
     'IMAGE_BEFORE_FIELD': True,
     'DICTIONARY_MIN_LENGTH': 0,
     'DICTIONARY_MAX_LENGTH': 99,
+    'CAPTCHA_TEST_MODE': False,
     'REDIS': {  # Settings for redis database
         'HOST': 'localhost',
         'PORT': 6379,
