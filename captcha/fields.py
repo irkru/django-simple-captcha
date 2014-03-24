@@ -6,6 +6,7 @@ from django.forms import ValidationError
 from django.forms.fields import CharField, MultiValueField
 from django.forms.widgets import TextInput, MultiWidget, HiddenInput
 from django.utils.translation import ugettext_lazy as _
+import redis
 
 
 class CaptchaTextInput(MultiWidget):
@@ -84,8 +85,22 @@ class CaptchaField(MultiValueField):
         super(CaptchaField, self).clean(value)
         response, value[1] = value[1].strip().lower(), ''
 
-        try:
-            delete(response, value[0])
-        except Exception:
-            raise ValidationError(getattr(self, 'error_messages', dict()).get('invalid', _('Invalid CAPTCHA')))
+        if settings.CAPTCHA['CAPTCHA_TEST_MODE'] and response.lower() == 'passed':
+            # automatically pass the test
+            try:
+                # try to delete the captcha based on its hash
+                client = redis.StrictRedis(host=settings.CAPTCHA['REDIS']['HOST'],
+                                           port=settings.CAPTCHA['REDIS']['PORT'], db=settings.CAPTCHA['REDIS']['DB'])
+                key = '%s.%s' % (settings.CAPTCHA['REDIS']['PREFIX'], value[0])
+                client.delete(key)
+            except Exception:
+                # ignore errors
+                pass
+        elif not self.required and not response:
+            pass
+        else:
+            try:
+                delete(response, value[0])
+            except Exception:
+                raise ValidationError(getattr(self, 'error_messages', dict()).get('invalid', _('Invalid CAPTCHA')))
         return value
