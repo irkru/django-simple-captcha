@@ -6,7 +6,7 @@ Installation
 
 1. Download ``django-simple-captcha`` using pip_ by running: ``pip install  django-simple-captcha``
 2. Add ``captcha`` to the ``INSTALLED_APPS`` in your ``settings.py``
-3. Run ``python manage.py syncdb`` (or ``python manage.py migrate`` if you are managing databae migrations via South) to create the required database tables
+3. Run ``python manage.py syncdb`` (or ``python manage.py migrate`` if you are managing database migrations via South) to create the required database tables
 4. Add an entry to your ``urls.py``::
 
         urlpatterns += patterns('',
@@ -87,7 +87,7 @@ An example CAPTCHA validation in AJAX::
                 to_json_responce['new_cptch_key'] = CaptchaStore.generate_key()
                 to_json_responce['new_cptch_image'] = captcha_image_url(to_json_responce['new_cptch_key'])
 
-                return HttpResponse(json.dumps(to_json_responce), mimetype='application/json')
+                return HttpResponse(json.dumps(to_json_responce), content_type='application/json')
 
         def form_valid(self, form):
             form.save()
@@ -98,7 +98,7 @@ An example CAPTCHA validation in AJAX::
                 to_json_responce['new_cptch_key'] = CaptchaStore.generate_key()
                 to_json_responce['new_cptch_image'] = captcha_image_url(to_json_responce['new_cptch_key'])
 
-                return HttpResponse(json.dumps(to_json_responce), mimetype='application/json')
+                return HttpResponse(json.dumps(to_json_responce), content_type='application/json')
 
 
 And in javascript your must update the image and hidden input in form

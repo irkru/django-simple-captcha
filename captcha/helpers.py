@@ -2,7 +2,7 @@
 import random
 from captcha.conf import settings
 from django.core.urlresolvers import reverse
-
+from six import u
 
 def math_challenge():
     operators = ('+', '*', '-',)
@@ -29,7 +29,7 @@ def unicode_challenge():
 
 
 def word_challenge():
-    fd = file(settings.CAPTCHA['WORDS_DICTIONARY'], 'rb')
+    fd = open(settings.CAPTCHA['WORDS_DICTIONARY'], 'rb')
     l = fd.readlines()
     fd.close()
     while True:
@@ -41,7 +41,7 @@ def word_challenge():
 
 def huge_words_and_punctuation_challenge():
     "Yay, undocumneted. Mostly used to test Issue 39 - http://code.google.com/p/django-simple-captcha/issues/detail?id=39"
-    fd = file(settings.CAPTCHA['WORDS_DICTIONARY'], 'rb')
+    fd = open(settings.CAPTCHA['WORDS_DICTIONARY'], 'rb')
     l = fd.readlines()
     fd.close()
     word = ''
@@ -67,6 +67,10 @@ def noise_dots(draw, image):
     size = image.size
     for p in range(int(size[0] * size[1] * 0.1)):
         draw.point((random.randint(0, size[0]), random.randint(0, size[1])), fill=settings.CAPTCHA['FOREGROUND_COLOR'])
+    return draw
+
+
+def noise_null(draw, image):
     return draw
 
 

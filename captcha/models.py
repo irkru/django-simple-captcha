@@ -6,7 +6,7 @@ import random
 import time
 import unicodedata
 from django.http import Http404
-
+import six
 import redis
 
 # Heavily based on session key generation in Django
@@ -19,9 +19,10 @@ MAX_RANDOM_KEY = 18446744073709551616L     # 2 << 63
 
 
 try:
-    from hashlib import sha1 as sha_digest
+    import hashlib  # sha for Python 2.5+
 except ImportError:
-    import sha as sha_digest # sha for Python 2.4 (deprecated in Python 2.6)
+    import sha  # sha for Python 2.4 (deprecated in Python 2.6)
+    hashlib = False
 
 
 def get_safe_now():
@@ -41,8 +42,10 @@ def create(challenge, response, hashkey=None):
 
     if not hashkey:
         key_ = unicodedata.normalize('NFKD', str(randrange(0, MAX_RANDOM_KEY)) + str(time.time()) + unicode(challenge)).encode('ascii', 'ignore') + unicodedata.normalize('NFKD', unicode(response)).encode('ascii', 'ignore')
-
-        hashkey = sha_digest(key_).hexdigest()
+        if hashlib:
+            hashkey = hashlib.sha1(key_).hexdigest()
+        else:
+            hashkey = sha.new(key_).hexdigest()
 
     client = redis.StrictRedis(host=captcha_settings.CAPTCHA['REDIS']['HOST'], port=captcha_settings.CAPTCHA['REDIS']['PORT'],
         db=captcha_settings.CAPTCHA['REDIS']['DB'])

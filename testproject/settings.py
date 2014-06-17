@@ -2,6 +2,7 @@
 import django
 import os
 import sys
+from six import u
 
 SITE_ID = 1
 
@@ -36,7 +37,7 @@ LANGUAGE_CODE = "en"
 
 LANGUAGES = (
     ('en', 'English'),
-    ('ja', u'日本語'),
+    ('ja', u('日本語')),
 )
 
 SOUTH_TESTS_MIGRATE = False
@@ -49,10 +50,11 @@ ROOT_URLCONF = 'testproject.urls'
 
 DEBUG = True
 TEMPLATE_DEBUG = True
+TEMPLATE_DIRS = ('templates',)
 
 # Django 1.4 TZ support
 USE_TZ = True
 SECRET_KEY = 'empty'
 
 
-CAPTCHA_FLITE_PATH = os.environ.get('CAPTCHA_FLITE_PATH', None)
+CAPTCHA['FLITE_PATH'] = os.environ.get('CAPTCHA_FLITE_PATH', None)

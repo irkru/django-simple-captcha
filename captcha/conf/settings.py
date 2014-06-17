@@ -59,10 +59,10 @@ def get_challenge():
 def noise_functions():
     if CAPTCHA['NOISE_FUNCTIONS']:
         return map(_callable_from_string, CAPTCHA['NOISE_FUNCTIONS'])
-    return list()
+    return []
 
 
 def filter_functions():
     if CAPTCHA['FILTER_FUNCTIONS']:
         return map(_callable_from_string, CAPTCHA['FILTER_FUNCTIONS'])
-    return list()
+    return []
