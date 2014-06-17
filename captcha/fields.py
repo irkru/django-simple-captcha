@@ -138,5 +138,5 @@ class CaptchaField(MultiValueField):
             try:
                 delete(response, value[0])
             except Exception:
-                raise ValidationError(getattr(self, 'error_messages', dict()).get('invalid', _('Invalid CAPTCHA')))
+                raise ValidationError(getattr(self, 'error_messages', dict()).get('invalid', ugettext_lazy('Invalid CAPTCHA')))
         return value
