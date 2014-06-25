@@ -71,21 +71,28 @@ class CaptchaTextInput(BaseCaptchaTextInput):
         self._args = kwargs
         self._args['output_format'] = self._args.get('output_format') or settings.CAPTCHA['OUTPUT_FORMAT']
 
-        for key in ('image', 'hidden_field', 'text_field'):
-            if '%%(%s)s' % key not in self._args['output_format']:
-                raise ImproperlyConfigured('All of %s must be present in your CAPTCHA[\'OUTPUT_FORMAT\'] setting. Could not find %s' % (
-                    ', '.join(['%%(%s)s' % k for k in ('image', 'hidden_field', 'text_field')]),
-                    '%%(%s)s' % key
-                ))
+        if isinstance(self._args['output_format'], (str, unicode)):
+            for key in ('image', 'hidden_field', 'text_field'):
+                if '%%(%s)s' % key not in self._args['output_format']:
+                    raise ImproperlyConfigured('All of %s must be present in your CAPTCHA[\'OUTPUT_FORMAT\'] setting. Could not find %s' % (
+                        ', '.join(['%%(%s)s' % k for k in ('image', 'hidden_field', 'text_field')]),
+                        '%%(%s)s' % key
+                    ))
         super(CaptchaTextInput, self).__init__(attrs)
 
     def format_output(self, rendered_widgets):
         hidden_field, text_field = rendered_widgets
-        return self._args['output_format'] % {
+        output_format = self._args['output_format']
+        kwargs = {
             'image': self.image_and_audio,
             'hidden_field': hidden_field,
             'text_field': text_field
         }
+
+        if callable(output_format):
+            return output_format(**kwargs)
+
+        return output_format % kwargs
 
     def render(self, name, value, attrs=None):
         self.fetch_captcha_store(name, value, attrs)
